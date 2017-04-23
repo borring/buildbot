@@ -147,6 +147,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Printf("BUILDBOT!\n")
 	http.HandleFunc("/build", newBuildbotHandler(&db{d}))
 	http.ListenAndServe(":8077", nil)
 }
