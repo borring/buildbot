@@ -1,0 +1,18 @@
+#!/bin/zsh
+
+gitroot=$(pwd)
+gitbranch=$(echo ${1} | sed -n -r 's;.*/(.+)$;\1;p')
+githash=$(git log -1 ${gitbranch} --pretty=format:%H)
+gitmsg=$(git log -1 ${githash} --pretty=format:%s%n%n%b | sed -zr 's;\n;\\n;g' | sed -r 's;\t;\\t;g')
+category=$(git log -1 ${githash} --pretty=format:%s | sed -n -r 's;^(.*):.*;\1;p')
+
+curl -i \
+	-H "Content-Type: application/json" \
+	-X POST \
+	-d "{
+\"commit-hash\": \"${githash}\",
+\"commit-message\": \"${gitmsg}\",
+\"git-root\": \"${gitroot}\",
+\"branch\": \"${gitbranch}\",
+\"category\": \"${category}\"
+}" localhost:8077/build
