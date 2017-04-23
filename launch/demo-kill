@@ -1,0 +1,3 @@
+#!/bin/zsh
+#
+sudo su gitolite3 -c "pkill buildbot"
