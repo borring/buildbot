@@ -15,6 +15,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	mysql "github.com/go-sql-driver/mysql"
 )
 
 var (
@@ -139,10 +140,19 @@ func newRoot(dir, prefix string) (string, error) {
 }
 
 func main() {
+	host := flag.String("h", "localhost:3306", "Database host to connect to")
 	dbname := flag.String("db", "tickets", "Which DB to connect to")
 	flag.Parse()
-	dbserver := fmt.Sprintf("moymoy:paspass@/%s?parseTime=true", *dbname)
-	d, err := sql.Open("mysql", dbserver)
+
+	dsn := &mysql.Config{
+		User:      "moymoy",
+		Passwd:    "paspass",
+		DBName:    *dbname,
+		Net:       "tcp",
+		Addr:      *host,
+		ParseTime: true,
+	}
+	d, err := sql.Open("mysql", dsn.FormatDSN())
 	if err != nil {
 		log.Fatal(err)
 	}

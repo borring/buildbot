@@ -13,19 +13,26 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	mysql "github.com/go-sql-driver/mysql"
 )
 
-func testingDB(fn func(*db)) error {
-	dbserver := "moymoy:paspass@/tickets_testing?parseTime=true"
-	d, err := sql.Open("mysql", dbserver)
+func testingDB(t *testing.T, fn func(*db)) {
+	dsn := &mysql.Config{
+		User:      "moymoy",
+		Passwd:    "paspass",
+		DBName:    "tickets_testing",
+		Net:       "tcp",
+		Addr:      "localhost:3306",
+		ParseTime: true,
+	}
+	d, err := sql.Open("mysql", dsn.FormatDSN())
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
 	fn(&db{d})
 
 	d.Close()
-	return nil
 }
 
 func TestNewRoot(t *testing.T) {
@@ -77,7 +84,7 @@ func TestNewTicket(t *testing.T) {
 	}
 	r := ticketSchema{}
 
-	if err := testingDB(func(d *db) {
+	testingDB(t, func(d *db) {
 		count, err := testTicketInsertion(d, &r, tk.submitter, func() {
 			if err := newTicket(d, bsig, tk); err != nil {
 				t.Fatalf("Could not create new ticket %s", err.Error())
@@ -89,9 +96,7 @@ func TestNewTicket(t *testing.T) {
 		if count != 1 {
 			t.Fatalf("Failed to add new ticket")
 		}
-	}); err != nil {
-		t.Fatal(err)
-	}
+	})
 
 	if !r.DateCreated.Equal(r.LastUpdated) {
 		t.Fatalf("Dates don't match")
@@ -122,7 +127,7 @@ func TestBuildbotHandler(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 
-		if err := testingDB(func(d *db) {
+		testingDB(t, func(d *db) {
 			handler := newBuildbotHandler(d)
 			count, err := testTicketInsertion(d, &r, "buildbot", func() {
 				handler(rec, req)
@@ -134,9 +139,7 @@ func TestBuildbotHandler(t *testing.T) {
 				t.Fatalf("Failed to insert a ticket: expected to create %d tickets, made %d",
 					ecount, count)
 			}
-		}); err != nil {
-			t.Fatal(err)
-		}
+		})
 	}
 
 	bsig := buildSignal{
