@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"regexp"
 )
@@ -40,6 +39,5 @@ func (tk *ticket) run(cmd *exec.Cmd, errstrf string) bool {
 	}
 	tk.logmsg = output
 
-	log.Println(tk.errmsg)
 	return false
 }
