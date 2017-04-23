@@ -29,7 +29,7 @@ func newTicket(d *db, bsig buildSignal, tk ticket) error {
 	timestamp := tnow.Format("2006-01-02 15:04:05")
 
 	ver := fmt.Sprintf("Branch: %s\nCommit: %s\n\n%s\n\n",
-		bsig.CommitHsh, bsig.CommitMsg, bsig.Branch)
+		bsig.Branch, bsig.CommitHsh, bsig.CommitMsg)
 
 	tk.logmsg = append([]byte(ver), tk.logmsg...)
 
