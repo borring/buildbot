@@ -26,6 +26,7 @@ func TestSubmitTicket(t *testing.T) {
 	bsig := ticket.BuildSignal{
 		CommitHsh: "abcd423",
 		CommitMsg: "crappy work",
+		Category:  "fakemodule",
 	}
 	cmd := exec.Command(filepath.Join(testdir, "failcmd"))
 

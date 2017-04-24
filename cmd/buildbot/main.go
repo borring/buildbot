@@ -124,12 +124,14 @@ var NewTicket func() ticket.Ticket
 
 func main() {
 	host := flag.String("h", "localhost:3306", "Database host to connect to")
+	user := flag.String("u", "moymoy", "Database user")
+	pass := flag.String("p", "paspass", "Database user password")
 	dbname := flag.String("db", "tickets", "Which DB to connect to")
 	flag.Parse()
 
 	dsn := &mysql.Config{
-		User:      "moymoy",
-		Passwd:    "paspass",
+		User:      *user,
+		Passwd:    *pass,
 		DBName:    *dbname,
 		Net:       "tcp",
 		Addr:      *host,
