@@ -20,13 +20,15 @@ type ticketSchema struct {
 	Submitter   string    `sql:"submitter"`
 	Priority    int       `sql:"priority"`
 	Category    string    `sql:"category"`
+	Assignee    string    `sql:"assignee"`
 }
 
 func TestSubmitTicket(t *testing.T) {
 	bsig := ticket.BuildSignal{
-		CommitHsh: "abcd423",
-		CommitMsg: "crappy work",
-		Category:  "fakemodule",
+		CommitHsh: "d7cbe0ac4098f56338c74859d2b39498b64ba224",
+		CommitMsg: "pa04: fix nil pointer reference\n changes commited\n\tmodified: bull.sh\n\tmodified: crazy.bat",
+		Branch:    "feature-v2",
+		Category:  "mock-module",
 	}
 	cmd := exec.Command(filepath.Join(testdir, "failcmd"))
 
@@ -100,6 +102,7 @@ func ticketCounter(d *db, r *ticketSchema, submitter string) (int, error) {
 			&r.Submitter,
 			&r.Priority,
 			&r.Category,
+			&r.Assignee,
 		); err != nil {
 			return -1, fmt.Errorf("couldn't scan row: %s\n", err.Error())
 		}

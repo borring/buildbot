@@ -39,7 +39,7 @@ func (tk *ticketdb) SubmitTicket(bsig ticket.BuildSignal) error {
 	tid := tnow.Format(tidfmt)
 	timestamp := tnow.Format(timestampfmt)
 
-	ver := fmt.Sprintf("Branch: %s\nCommit: %s\n\n%s\n\n",
+	ver := fmt.Sprintf("Branch: %s\nCommit: %s\n%s\n\n",
 		bsig.Branch, bsig.CommitHsh, bsig.CommitMsg)
 
 	logmsg := tk.GetLog()
