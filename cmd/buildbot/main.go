@@ -35,7 +35,7 @@ func (r *readercpy) Read(p []byte) (int, error) {
 }
 
 func newBuildbotHandler(fn func() ticket.Ticket) http.HandlerFunc {
-	NewTicket = fn
+	NewTicket := fn
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			return
@@ -119,8 +119,6 @@ func newRoot(dir, prefix string) (string, error) {
 	}
 	return ioutil.TempDir(dir, prefix)
 }
-
-var NewTicket func() ticket.Ticket
 
 func main() {
 	host := flag.String("h", "localhost:3306", "Database host to connect to")
