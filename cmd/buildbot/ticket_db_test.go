@@ -55,8 +55,8 @@ func TestSubmitTicket(t *testing.T) {
 		t.Fatalf("Dates don't match")
 	}
 
-	if r.Status != "open" {
-		t.Errorf("Status is not open: %q", r.Status)
+	if r.Status != "Open" {
+		t.Errorf("Status is not Open: %q", r.Status)
 	}
 
 	if len(r.Tid) != 14 {
