@@ -29,6 +29,7 @@ func (d *db) transaction(fn txFunc) error {
 	defer stmt.Close()
 
 	if _, err := stmt.Exec(args...); err != nil {
+		tx.Commit()
 		return fmt.Errorf("failed to exec statemnt: %s\n", err)
 	}
 
