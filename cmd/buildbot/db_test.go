@@ -33,13 +33,16 @@ func TestTransaction(t *testing.T) {
 		wg := sync.WaitGroup{}
 		for i := 'a'; i < 'g'; i++ {
 			wg.Add(1)
-			go func() {
-				d.transaction(func(tx *sql.Tx) ([]interface{}, *sql.Stmt, error) {
+			go func(a rune) {
+				if err := d.transaction(func(tx *sql.Tx) ([]interface{}, *sql.Stmt, error) {
 					stmt, err := tx.Prepare("INSERT INTO txtest (first, second, now) VALUES (?, ?, ?)")
-					return []interface{}{string(i), i, time.Now().Format(timestampfmt)}, stmt, err
-				})
+					return []interface{}{string(a), a, time.Now().Format(timestampfmt)}, stmt, err
+				}); err != nil {
+					t.Errorf("transaction failed: %s", err.Error())
+				}
 				wg.Done()
-			}()
+			}(i)
 		}
+		wg.Wait()
 	})
 }
