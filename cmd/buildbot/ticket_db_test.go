@@ -30,7 +30,7 @@ func TestSubmitTicket(t *testing.T) {
 		Branch:    "feature-v2",
 		Category:  "mock-module",
 	}
-	cmd := exec.Command(filepath.Join(testdir, "failcmd"))
+	cmd := exec.Command(filepath.Join(testdir, "bin/failcmd"))
 
 	r := ticketSchema{}
 
