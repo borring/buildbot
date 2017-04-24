@@ -1,3 +1,6 @@
 #!/bin/zsh
 
-go build && mv buildbot /tmp && sudo su gitolite3 -c "cd /tmp;/tmp/buildbot -h localhost:3306 -db tickets_testing"
+cd cmd/buildbot &&
+	go build &&
+	mv buildbot /tmp &&
+	sudo su gitolite3 -c "cd /tmp;/tmp/buildbot -h localhost:3306 -db tickets_testing"

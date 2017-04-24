@@ -1,6 +1,7 @@
 package main
 
 import (
+	"borring/cs495/buildbot/ticket"
 	"bytes"
 	"database/sql"
 	"encoding/json"
@@ -12,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	mysql "github.com/go-sql-driver/mysql"
@@ -22,25 +22,6 @@ var (
 	tmpdir        = "/tmp"
 	tmprootprefix = "tmpbuild-"
 )
-
-func newTicket(d *db, bsig buildSignal, tk ticket) error {
-	tnow := time.Now()
-	tid := tnow.Format("20060102150405")
-	timestamp := tnow.Format("2006-01-02 15:04:05")
-
-	ver := fmt.Sprintf("Branch: %s\nCommit: %s\n\n%s\n\n",
-		bsig.Branch, bsig.CommitHsh, bsig.CommitMsg)
-
-	tk.logmsg = append([]byte(ver), tk.logmsg...)
-
-	err := d.transaction(func(t *sql.Tx) ([]interface{}, *sql.Stmt, error) {
-		str := "INSERT into w_mei_tickets (tid, dateCreated, lastUpdated, status, title, description, submitter, priority, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-		args := []interface{}{tid, timestamp, timestamp, "open", tk.errmsg, string(tk.logmsg), "buildbot", 2, "3"}
-		stmt, err := t.Prepare(str)
-		return args, stmt, err
-	})
-	return err
-}
 
 type readercpy struct {
 	io.ReadCloser
@@ -53,7 +34,8 @@ func (r *readercpy) Read(p []byte) (int, error) {
 	return n, err
 }
 
-func newBuildbotHandler(d *db) http.HandlerFunc {
+func newBuildbotHandler(fn func() ticket.Ticket) http.HandlerFunc {
+	NewTicket = fn
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			return
@@ -67,61 +49,60 @@ func newBuildbotHandler(d *db) http.HandlerFunc {
 		log.Printf("%s\n", string(newreader.store))
 
 		decoder := json.NewDecoder(bytes.NewBuffer(newreader.store))
-		var bsig buildSignal
+		var bsig ticket.BuildSignal
 		if err := decoder.Decode(&bsig); err != nil {
 			log.Printf("Could not decode json: %s\n", err.Error())
 			return
 		}
 		defer newreader.Close()
 
-		var t ticket
+		t := NewTicket()
 		defer func() {
-			if t.errmsg == "" {
+			// Don't attempt to submit if request body is empty
+			// or JSON is invalid
+			if bsig.CommitHsh == "" {
 				return
 			}
-
-			log.Printf("%s\n", t.errmsg)
-			log.Printf("Generating ticket\n")
-			if err := newTicket(d, bsig, t); err != nil {
+			if err := t.SubmitTicket(bsig); err != nil {
 				log.Printf("Could not submit ticket: %s\n", err.Error())
 			}
 		}()
 
 		nroot, err := newRoot(tmpdir, tmprootprefix)
 		if err != nil {
-			t.errmsg = err.Error()
+			t.SetErr(err.Error())
 			return
 		}
 
-		t.run(
+		t.Run(
 			exec.Command("git", "clone", bsig.GitRoot, nroot),
 			"Failed to copy repository",
 		)
 
 		gitcobcmd := exec.Command("git", "checkout", bsig.Branch)
 		gitcobcmd.Dir = nroot
-		t.run(
+		t.Run(
 			gitcobcmd,
 			fmt.Sprintf("Failed to checkout branch: %q", bsig.Branch),
 		)
 
 		gitcocmd := exec.Command("git", "checkout", bsig.CommitHsh)
 		gitcocmd.Dir = nroot
-		t.run(
+		t.Run(
 			gitcocmd,
 			fmt.Sprintf("Failed to checkout commit: %q", bsig.CommitHsh),
 		)
 
 		makecmd := exec.Command("make", bsig.Category)
 		makecmd.Dir = nroot
-		t.run(
+		t.Run(
 			makecmd,
 			fmt.Sprintf("Build Failed! %s", bsig.CommitHsh),
 		)
 
 		testcmd := exec.Command("make", bsig.Category+"-"+"test")
 		testcmd.Dir = nroot
-		t.run(
+		t.Run(
 			testcmd,
 			fmt.Sprintf("Test Failed! %s", bsig.CommitHsh),
 		)
@@ -138,6 +119,8 @@ func newRoot(dir, prefix string) (string, error) {
 	}
 	return ioutil.TempDir(dir, prefix)
 }
+
+var NewTicket func() ticket.Ticket
 
 func main() {
 	host := flag.String("h", "localhost:3306", "Database host to connect to")
@@ -158,6 +141,6 @@ func main() {
 	}
 
 	log.Printf("BUILDBOT!\n")
-	http.HandleFunc("/build", newBuildbotHandler(&db{d}))
+	http.HandleFunc("/build", newBuildbotHandler(NewTicketFunc(&db{d})))
 	http.ListenAndServe(":8077", nil)
 }
