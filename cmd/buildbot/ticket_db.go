@@ -46,8 +46,8 @@ func (tk *ticketdb) SubmitTicket(bsig ticket.BuildSignal) error {
 	logmsg = append([]byte(ver), logmsg...)
 
 	err := tk.d.transaction(func(t *sql.Tx) ([]interface{}, *sql.Stmt, error) {
-		str := "INSERT into w_mei_tickets (tid, dateCreated, lastUpdated, status, title, description, submitter, priority, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-		args := []interface{}{tid, timestamp, timestamp, "Open", tk.GetErr(), string(logmsg), "buildbot", 2, bsig.Category}
+		str := "INSERT into w_mei_tickets (tid, dateCreated, lastUpdated, status, title, description, submitter, priority, category, assignee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		args := []interface{}{tid, timestamp, timestamp, "Open", tk.GetErr(), string(logmsg), "buildbot", 2, bsig.Category, ""}
 		stmt, err := t.Prepare(str)
 		return args, stmt, err
 	})
